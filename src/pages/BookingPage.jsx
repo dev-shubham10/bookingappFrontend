@@ -12,7 +12,8 @@ function parseSeatIds(input) {
 export function BookingPage({ authUser }) {
   const [events, setEvents] = useState([]);
   const [eventId, setEventId] = useState('');
-  const [seatIdsInput, setSeatIdsInput] = useState('1,2,3');
+  const [availableSeats, setAvailableSeats] = useState([]);
+  const [seatIdsInput, setSeatIdsInput] = useState('');
   const [couponCode, setCouponCode] = useState('');
   const [lockResult, setLockResult] = useState(null);
   const [pricingResult, setPricingResult] = useState(null);
@@ -35,6 +36,21 @@ export function BookingPage({ authUser }) {
       }
     };
     loadEvents();
+  }, []);
+
+  useEffect(() => {
+    const loadSeats = async () => {
+      if (!eventId) return;
+      try {
+        const res = await api.get(`/events/${eventId}/seats`);
+        setAvailableSeats(res.data);
+        setSeatIdsInput('');
+      } catch (err) {
+        setError(err.response?.data?.error || err.message);
+        setAvailableSeats([]);
+      }
+    };
+    loadSeats();
   }, [eventId]);
 
   const ensureLoggedIn = () => {
@@ -154,7 +170,13 @@ export function BookingPage({ authUser }) {
                 className="w-full rounded-md border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-50"
                 value={seatIdsInput}
                 onChange={(e) => setSeatIdsInput(e.target.value)}
+                placeholder=""
               />
+              {availableSeats.length > 0 && (
+                <p className="text-xs text-slate-400 mt-2">
+                  Available seats: {availableSeats.filter((s) => s.status === 'AVAILABLE').length} / {availableSeats.length}
+                </p>
+              )}
             </div>
 
             <div>
